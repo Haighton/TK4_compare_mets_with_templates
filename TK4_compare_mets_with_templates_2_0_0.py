@@ -9,13 +9,12 @@ import time
 import collections
 
 from lxml import etree
-import lxml.builder
 from xmldiff import main, formatting
 from tqdm import tqdm
 
 # Don't add a filename. Recommended 'C:\Users\DDD020\OneDrive - KB nationale bibliotheek\Desktop'
 #OUTPUT_LOC = r'C:\Users\DDD020\OneDrive - KB nationale bibliotheek\Desktop'
-OUTPUT_LOC = "/Users/haighton/Development/KB/TK4_mets_templates_controle/Output/"
+OUTPUT_LOC = "/Users/haighton/Development/KB/TK4_compare_mets_with_templates/Output/"
 
 
 def get_mets(paths):
@@ -131,8 +130,13 @@ def compare_files(mets, templates):
 
         # [TODO]: Formatting option not working when comapring pica and marc sections.
 
+        # Using the .xpath function automatically adds all the namespaces from
+        # the loaded XML to the root of the output. We also need pica and marc
+        # namespaces, we get these by using kbdm:catalogRecord as our root,
+        # rather than mets:sourceMD[1].
+
         sourcemd_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//kbmd:catalogRecord', namespaces=ns)[0]),
-                                        right=etree.tostring(mets_tree.xpath('////kbmd:catalogRecord', namespaces=ns)[0]),
+                                        right=etree.tostring(mets_tree.xpath('//kbmd:catalogRecord', namespaces=ns)[0]),
                                         diff_options=diff_options)
                                         #formatter=formatter)
         if sourcemd_diff:

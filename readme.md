@@ -1,4 +1,4 @@
-# TK4_compare_mets_with_templates
+# TK4_compare_mets_with_templates script
 
 This script checks if the data we send to the digitisation company - which has
 the form of a partly created METS XML file (METS-template) - has been

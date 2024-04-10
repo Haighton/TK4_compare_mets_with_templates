@@ -4,8 +4,7 @@
 
 import sys
 import os
-#import re
-import time
+from datetime import datetime
 import collections
 
 from lxml import etree
@@ -14,7 +13,8 @@ from tqdm import tqdm
 
 # Don't add a filename. Recommended 'C:\Users\DDD020\OneDrive - KB nationale bibliotheek\Desktop'
 #OUTPUT_LOC = r'C:\Users\DDD020\OneDrive - KB nationale bibliotheek\Desktop'
-OUTPUT_LOC = "/Users/haighton/Development/KB/TK4_compare_mets_with_templates/Output/"
+#OUTPUT_LOC = "/Users/haighton/Development/KB/TK4_compare_mets_with_templates/Output/"  # Air
+OUTPUT_LOC = "/Users/haighton/Development/KB/TK4_mets_templates_controle/Output/"  # Pro
 
 
 def get_mets(paths):
@@ -71,8 +71,11 @@ def get_templates(path_templates):
 def compare_files(mets, templates):
     """Compare data between METS and templates.
 
-    Check [diffxml](https://xmldiff.readthedocs.io/en/stable/api.html) for
-    diff_options
+    diff_options:
+
+    - F: A value between 0 and 1 that determines how similar two XML nodes must
+         be to match as the same in both trees. Defaults to 0.5.
+    - ratio_mode: ['accurate', 'fast', 'faster']
 
     Arguments:
         mets (dict): object id's with paths to METS files.
@@ -84,11 +87,9 @@ def compare_files(mets, templates):
     errors = collections.OrderedDict()
     common_ids = list(set(mets.keys()).intersection(templates.keys()))
     common_ids = sorted(common_ids)
-    #print('\n')
 
     parser = etree.XMLParser(encoding='utf-8', remove_blank_text=True)
     diff_options = {'F': 0.5, 'ratio_mode': 'fast'}
-    formatter = formatting.XmlDiffFormatter(normalize=formatting.WS_BOTH, pretty_print=True)
     ns = {"mets": "http://www.loc.gov/METS/",
           "mods": "http://www.loc.gov/mods/v3",
           "premis": "info:lc/xmlns/premis-v2",
@@ -108,80 +109,50 @@ def compare_files(mets, templates):
 
         dmdsec_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:dmdSec[@ID="DMD1"]', namespaces=ns)[0]),
                                       right=etree.tostring(mets_tree.xpath('//mets:dmdSec[@ID="DMD1"]', namespaces=ns)[0]),
-                                      diff_options=diff_options,
-                                      formatter=formatter)
+                                      diff_options=diff_options)
         if dmdsec_diff:
-            error_data.append(dmdsec_diff)
+            error_data.append(['mets:dmdSec errors:'] + dmdsec_diff)
 
         techmd_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:techMD[@ID="TMD00001"]', namespaces=ns)[0]),
                                       right=etree.tostring(mets_tree.xpath('//mets:techMD[@ID="TMD00001"]', namespaces=ns)[0]),
-                                      diff_options=diff_options,
-                                      formatter=formatter)
+                                      diff_options=diff_options)
         if techmd_diff:
-            error_data.append(techmd_diff)
+            error_data.append(['mets:techMD errors'] + techmd_diff)
 
         rightsmd_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:rightsMD[@ADMID="TMD00001"]', namespaces=ns)[0]),
                                         right=etree.tostring(mets_tree.xpath('//mets:rightsMD[@ADMID="TMD00001"]', namespaces=ns)[0]),
-                                        diff_options=diff_options,
-                                        formatter=formatter)
+                                        diff_options=diff_options)
         if rightsmd_diff:
-            error_data.append(rightsmd_diff)
-
-
-        # [TODO]: Formatting option not working when comapring pica and marc sections.
+            error_data.append(['mets:rightsMD errors:'] + rightsmd_diff)
 
         # Using the .xpath function automatically adds all the namespaces from
         # the loaded XML to the root of the output. We also need pica and marc
         # namespaces, we get these by using kbdm:catalogRecord as our root,
-        # rather than mets:sourceMD[1].
+        # rather than mets:sourceMD[@ID="SMD1"].
+        #
+        # testns = mets_tree.xpath('//kbmd:catalogRecord', namespaces=ns)[0]
+        # testns = mets_tree.xpath('//mets:sourceMD[@ID="SMD1"]', namespaces=ns)[0]
+        # print(testns.nsmap)
 
         sourcemd_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//kbmd:catalogRecord', namespaces=ns)[0]),
                                         right=etree.tostring(mets_tree.xpath('//kbmd:catalogRecord', namespaces=ns)[0]),
                                         diff_options=diff_options)
-                                        #formatter=formatter)
         if sourcemd_diff:
-            error_data.append(rightsmd_diff)
-        
-        """
-        # Compare //mets:amdSec/mets:sourceMD/[@ID="SMD1"]
-        sourcemd1_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:sourceMD[@ID="SMD1"]', namespaces=ns)[0]),
-                                         right=etree.tostring(mets_tree.xpath('//mets:sourceMD[@ID="SMD1"]', namespaces=ns)[0]),
-                                         diff_options=diff_options,
-                                         formatter=formatter)
-        if sourcemd1_diff:
-            error_data.append(sourcemd1_diff)
-        
-        
-        pica_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//pica:record', namespaces=ns)[0]),
-                                    right=etree.tostring(mets_tree.xpath('//pica:record', namespaces=ns)[0]),
-                                    diff_options=diff_options,
-                                    formatter=formatter)
-        if pica_diff:
-            error_data.append(pica_diff)
-
-        marc_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//marc:record', namespaces=ns)[0]),
-                                    right=etree.tostring(mets_tree.xpath('//marc:record', namespaces=ns)[0]),
-                                    diff_options=diff_options,
-                                    formatter=formatter)
-        if marc_diff:
-            error_data.append(marc_diff)
-        """
+            error_data.append(['kbmd:catalogRecord errors:'] + sourcemd_diff)
 
         # Comapare //mets:amdSec/mets:sourceMD/[@ID="SMD2"]
         sourcemd2_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:sourceMD[@ID="SMD2"]', namespaces=ns)[0]),
                                          right=etree.tostring(mets_tree.xpath('//mets:sourceMD[@ID="SMD2"]', namespaces=ns)[0]),
-                                         diff_options=diff_options,
-                                         formatter=formatter)
+                                         diff_options=diff_options)
         if sourcemd2_diff:
-            error_data.append(sourcemd2_diff)
+            error_data.append(['mets:sourceMD[2] errors:'] + sourcemd2_diff)
 
         # Compare //mets:amdSec/mets:digiprovMD
         digiprovmd_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:digiprovMD', namespaces=ns)[0]),
                                           right=etree.tostring(mets_tree.xpath('//mets:digiprovMD', namespaces=ns)[0]),
-                                          diff_options=diff_options,
-                                          formatter=formatter)
+                                          diff_options=diff_options)
         if digiprovmd_diff:
-            error_data.append(digiprovmd_diff)
+            error_data.append(['mets:digiprovMD errors:'] + digiprovmd_diff)
 
         # Batch ID
         batch_name = os.path.basename(os.path.dirname(os.path.dirname(
@@ -190,6 +161,7 @@ def compare_files(mets, templates):
 
         if error_data:
             errors[err_key] = error_data
+
     return errors
 
 
@@ -233,47 +205,52 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
     """
     batch_name_split = os.path.basename(path_templates).split('_')
     batch_id = batch_name_split[1] + '_' + batch_name_split[2]
-    output_name = ('compare_mets_with_templates-' + batch_id + '-' +
-                   time.strftime('%Y%m%d') + '.txt')
-    output_file = open(os.path.join(OUTPUT_LOC, output_name), 'w+')
+    dt = datetime.now()
+    output_name = (f"compare_mets_with_templates-{batch_id}-{dt.strftime('%Y%m%d')}.txt")
+    #output_file = open(os.path.join(OUTPUT_LOC, output_name), 'w+')
 
-    # Write datetime
-    output_file.write('[log generated ' + time.strftime('%Y-%m-%d %H:%M') + ']\n\n')
+    with open(os.path.join(OUTPUT_LOC, output_name), 'w+') as output_file:
 
-    # Write discrepancies in METS and template content.
-    if len(errors) > 0:
-        for object_id in errors.keys():
-            try:
-                output_file.write(object_id + ': ')
-                for errs in errors[object_id]:
+        # Write datetime
+        output_file.write(f"[log generated {dt.strftime('%Y-%m-%d %H:%M')}]\n\n")
+        
+        if errors:
+            for object_id, errs in errors.items():
+                try:
+                    output_file.write(f"\n{object_id}\n")
                     for err in errs:
+                        cnt = 0
                         output_file.write('\n')
-                        output_file.write(str(err))
-                output_file.write('\n\n')
+                        for serr in err:
+                            if cnt > 0:
+                                output_file.write(f"- {serr}\n")
+                            else:
+                                output_file.write(f"{serr}\n")
+                            cnt += 1
+                            #rint(cnt)
+                    output_file.write('\n')
+                except UnicodeEncodeError:
+                    output_file.write(f"\nUnicodeEncodeError in {object_id}")
+                    continue
+        else:
+            output_file.write('\nNo data discrepancies found.\n')
 
-            except UnicodeEncodeError:
-                print(f'UnicodeEncodeError in {object_id}.')
-                continue
-    else:
-        output_file.write('\nNo data discrepancies found.\n')
+        # Write discrepancies in Object ID's.
+        output_file.write('--------------------------------------------------------------------------------')
+        if len(mets_diff_ids) > 0:
+            output_file.write(f"\nThere are {len(mets_diff_ids)} unique object id's in METS:\n")
+            mets_diff_ids = sorted(mets_diff_ids)
+            for ids in mets_diff_ids:
+                output_file.write(ids + '\n')
 
-    # Write discrepancies in Object ID's.
-    output_file.write('--------------------------------------------------------------------------------')
-    if len(mets_diff_ids) > 0:
-        output_file.write(f"\nThere are {len(mets_diff_ids)} unique object id's in METS:\n")
-        mets_diff_ids = sorted(mets_diff_ids)
-        for ids in mets_diff_ids:
-            output_file.write(ids + '\n')
+        if len(templates_diff_ids) > 0:
+            output_file.write(f"\nThere are {len(templates_diff_ids)} unique object id's in templates:\n")
+            templates_diff_ids = sorted(templates_diff_ids)
+            for ids in templates_diff_ids:
+                output_file.write(ids + '\n')
 
-    if len(templates_diff_ids) > 0:
-        output_file.write(f"\nThere are {len(templates_diff_ids)} unique object id's in templates:\n")
-        templates_diff_ids = sorted(templates_diff_ids)
-        for ids in templates_diff_ids:
-            output_file.write(ids + '\n')
-
-    if len(templates_diff_ids) == 0 and len(mets_diff_ids) == 0:
-        output_file.write('\nSame object ID\'s found in METS and templates.')
-    output_file.close()
+        if len(templates_diff_ids) == 0 and len(mets_diff_ids) == 0:
+            output_file.write('\nSame object ID\'s found in METS and templates.')
 
 
 if __name__ == "__main__":
@@ -282,4 +259,3 @@ if __name__ == "__main__":
     errors = compare_files(mets, templates)
     mets_diff_ids, templates_diff_ids = different_ids(mets, templates)
     print_errors(errors, sys.argv[1], mets_diff_ids, templates_diff_ids)
-    #print(errors)

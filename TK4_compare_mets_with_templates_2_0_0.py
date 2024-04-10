@@ -55,8 +55,8 @@ from xmldiff import main
 from tqdm import tqdm
 
 # Location of output text file.
-#OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
-OUTPUT_LOC = '/Users/haighton/Development/KB/TK4_mets_templates_controle/Output'
+OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
+# OUTPUT_LOC = '/Users/haighton/Development/KB/TK4_mets_templates_controle/Output'
 
 
 def get_mets(paths):
@@ -209,7 +209,8 @@ def compare_files(mets, templates):
             del digiprovmd_diff[rm_entry]
 
             if digiprovmd_diff:
-                error_data.append(['mets:digiprovMD errors:'] + digiprovmd_diff)
+                error_data.append(
+                    ['mets:digiprovMD errors:'] + digiprovmd_diff)
 
         # Batch ID
         batch_name = os.path.basename(os.path.dirname(os.path.dirname(

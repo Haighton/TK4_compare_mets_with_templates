@@ -10,40 +10,39 @@ altered where it shouldn't have been e.g. dmdSec[1] and sourceMD should not be
 changed. It will also check if all the object ID's between the supplied METS
 and the templates are equal.
 
-## Usage:
-    Script expects atleast 2 arguments which should be the location of the
-    METS-templates and the location of 1 or more batches:
+## Usage
 
-    ``
-    python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" ... "/dir/batch_N"
+Script expects atleast 2 arguments which should be the location of the
+METS-templates and the location of 1 or more batches:
 
-    e.g.
+``
+python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" ... "/dir/batch_N"
 
-    python TK4_compare_mets_with_templates_2_0_0.py
-          "M:\BKT-traject\Digitalisering\BKT2_kranten7\Metadatadump\Zending_09\
-           MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
-          "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
-          "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
-          "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"
-    ``
+e.g.
 
-## Output:
-    A text file with all found discrepancies in `OUTPUT_LOC` :
-    `[OUTPUT_LOC]/compare_mets_with_templates-[batch_id]-[date].txt`
+python TK4_compare_mets_with_templates_2_0_0.py
+       "M:\BKT-traject\Digitalisering\BKT2_kranten7\Metadatadump\Zending_09\
+       MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
+       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
+       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
+       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"
+``
 
-## Modifications:
+## Output
 
-- v1.0.0 | 2017-01-01 | THA010
-    - Initial prototype script.
+A text file with all found discrepancies in `OUTPUT_LOC` :
+`[OUTPUT_LOC]/compare_mets_with_templates-[batch_id]-[date].txt`
 
-- v1.0.2 | 2020-07-20 | THA010
-    - Update stable version.
+## Modifications
 
-- v2.0.0 | 2024-04-10 | THA010
-    - Went over everything, cleaned-up and tested code from v1, autopep8, tbv
-      upcoming TK4 tender.
+Version| Mod.Date   | Mod.by | Modifications
+---    | ---        | ---    | ---
+v1.0.0 | 2017-01-01 | THA010 | - Initial prototype script. 
+v1.0.2 | 2020-07-20 | THA010 | - Update stable version.
+v2.0.0 | 2024-04-10 | THA010 | - Went over everything, cleaned-up and tested
+                                 code from v1, autopep8, tbv upcoming TK4 tender.
 
-Originally created by THA010 for KB BKT2 metadata checks.
+*** Originally created by THA010 for KB BKT2 metadata checks.
 """
 
 import sys

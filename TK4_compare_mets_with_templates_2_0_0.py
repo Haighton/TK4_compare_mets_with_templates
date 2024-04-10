@@ -30,7 +30,7 @@ python TK4_compare_mets_with_templates_2_0_0.py
 
 ## Output
 
-A text file with all found discrepancies in `OUTPUT_LOC` :
+A text (markdown) file with all found discrepancies in `OUTPUT_LOC` :
 `[OUTPUT_LOC]/compare_mets_with_templates-[batch_id]-[date].txt`
 
 ## Modifications
@@ -55,7 +55,8 @@ from xmldiff import main
 from tqdm import tqdm
 
 # Location of output text file.
-OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
+#OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
+OUTPUT_LOC = '/Users/haighton/Development/KB/TK4_mets_templates_controle/Output'
 
 
 def get_mets(paths):
@@ -198,8 +199,17 @@ def compare_files(mets, templates):
                                           right=etree.tostring(mets_tree.xpath(
                                               '//mets:digiprovMD', namespaces=ns)[0]),
                                           diff_options=diff_options)
+
         if digiprovmd_diff:
-            error_data.append(['mets:digiprovMD errors:'] + digiprovmd_diff)
+            # Ignore premis:eventDateTime difference.
+            rm_entry = 0
+            for i in range(len(digiprovmd_diff)):
+                if str(digiprovmd_diff[i]).startswith("UpdateTextIn(node='/mets:digiprovMD/mets:mdWrap/mets:xmlData/premis:event/premis:eventDateTime[1]'"):
+                    rm_entry = i
+            del digiprovmd_diff[rm_entry]
+
+            if digiprovmd_diff:
+                error_data.append(['mets:digiprovMD errors:'] + digiprovmd_diff)
 
         # Batch ID
         batch_name = os.path.basename(os.path.dirname(os.path.dirname(
@@ -257,14 +267,15 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
 
     with open(os.path.join(OUTPUT_LOC, output_name), 'w+') as output_file:
 
+        output_file.write("# Compare METS with Templates\n")
         # Write datetime
-        output_file.write(f"[log generated {dt.strftime('%Y-%m-%d %H:%M')}]\n\n")
+        output_file.write(f"_log generated {dt.strftime('%Y-%m-%d %H:%M')}_\n\n")
 
         # NB: errors dict values are list of lists, first val is category.
         if errors:
             for object_id, errs in errors.items():
                 try:
-                    output_file.write(f"\n{object_id}\n")
+                    output_file.write(f"\n## {object_id}\n")
                     for err in errs:
                         cnt = 0
                         output_file.write('\n')
@@ -272,7 +283,7 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
                             if cnt > 0:
                                 output_file.write(f"- {serr}\n")
                             else:
-                                output_file.write(f"{serr}\n")
+                                output_file.write(f"### {serr}\n\n")
                             cnt += 1
                     output_file.write('\n')
                 except UnicodeEncodeError:
@@ -285,20 +296,20 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
         output_file.write(
             '--------------------------------------------------------------------------------')
         if len(mets_diff_ids) > 0:
-            output_file.write(f"\nThere are {len(mets_diff_ids)} unique object id's in METS:\n")
+            output_file.write(f"\n\nThere are {len(mets_diff_ids)} unique object id's in METS:\n\n")
             mets_diff_ids = sorted(mets_diff_ids)
             for ids in mets_diff_ids:
-                output_file.write(ids + '\n')
+                output_file.write(f"- {ids}\n")
 
         if len(templates_diff_ids) > 0:
-            output_file.write(f"\nThere are {len(templates_diff_ids)} unique object id's in templates:\n")
+            output_file.write(f"\n\nThere are {len(templates_diff_ids)} unique object id's in templates:\n\n")
             templates_diff_ids = sorted(templates_diff_ids)
             for ids in templates_diff_ids:
-                output_file.write(ids + '\n')
+                output_file.write(f"- {ids}\n")
 
         if len(templates_diff_ids) == 0 and len(mets_diff_ids) == 0:
             output_file.write(
-                '\nSame object ID\'s found in METS and templates.')
+                "\nSame object ID's found in METS and templates.")
 
 
 if __name__ == "__main__":

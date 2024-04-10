@@ -42,7 +42,7 @@ v1.0.2 | 2020-07-20 | THA010 | - Update stable version.
 v2.0.0 | 2024-04-10 | THA010 | - Went over everything, cleaned-up and tested
                                  code from v1, autopep8, tbv upcoming TK4 tender.
 
-*** Originally created by THA010 for KB BKT2 metadata checks.
+_Originally created by THA010 for KB BKT2 metadata checks._
 """
 
 import sys
@@ -54,7 +54,7 @@ from lxml import etree
 from xmldiff import main
 from tqdm import tqdm
 
-# Don't add a filename. Recommended 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
+# Location of output text file.
 OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
 
 

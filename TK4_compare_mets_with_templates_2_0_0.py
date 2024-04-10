@@ -15,7 +15,7 @@ and the templates are equal.
 Script expects atleast 2 arguments which should be the location of the
 METS-templates and the location of 1 or more batches:
 
-``
+```
 python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" ... "/dir/batch_N"
 
 e.g.
@@ -26,7 +26,7 @@ python TK4_compare_mets_with_templates_2_0_0.py
        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"
-``
+```
 
 ## Output
 

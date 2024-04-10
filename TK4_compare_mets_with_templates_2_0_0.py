@@ -13,7 +13,7 @@ and the templates are equal.
 ## Usage
 
 Script expects atleast 2 arguments which should be the location of the
-METS-templates and the location of 1 or more batches:
+METS-templates and the location of 1 or more _deel batches_.
 
 ```
 python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" ... "/dir/batch_N"
@@ -30,8 +30,9 @@ python TK4_compare_mets_with_templates_2_0_0.py
 
 ## Output
 
-A text (markdown) file with all found discrepancies in `OUTPUT_LOC` :
-`[OUTPUT_LOC]/compare_mets_with_templates-[batch_id]-[date].txt`
+A text/markdown file with all found discrepancies in `OUTPUT_LOC`, with
+filename pattern:
+`compare_mets_with_templates-[batch_id]-[date].txt`
 
 ## Modifications
 
@@ -42,7 +43,8 @@ v1.0.2 | 2020-07-20 | THA010 | - Update stable version.
 v2.0.0 | 2024-04-10 | THA010 | - Went over everything, cleaned-up and tested
                                  code from v1, autopep8, tbv upcoming TK4 tender.
 
-_Originally created by THA010 for KB BKT2 metadata checks._
+_Originally created by THA010 for KB BKT2 metadata checks. Can be used on BKT2,
+BKT3 and TK4 metadata._
 """
 
 import sys
@@ -269,7 +271,7 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
     with open(os.path.join(OUTPUT_LOC, output_name), 'w+') as output_file:
 
         output_file.write(f"# Compare METS with Templates - {batch_id}\n\n")
-        output_file.write(f"_log generated {dt.strftime('%Y-%m-%d %H:%M')}_\n\n")
+        output_file.write(f"_log generated {dt.strftime('%Y-%m-%d %H:%M:%S')}_\n\n")
         output_file.write('\n## Data discrepancies\n')
 
         # NB: errors dict values are list of lists, first val is category.

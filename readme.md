@@ -9,7 +9,7 @@ and the templates are equal.
 ## Usage
 
 Script expects atleast 2 arguments which should be the location of the
-METS-templates and the location of 1 or more batches:
+METS-templates and the location of 1 or more _deel batches_.
 
 ```
 python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" ... "/dir/batch_N"
@@ -26,8 +26,10 @@ python TK4_compare_mets_with_templates_2_0_0.py
 
 ## Output
 
-A text (markdown) file with all found discrepancies in `OUTPUT_LOC` :
-`[OUTPUT_LOC]/compare_mets_with_templates-[batch_id]-[date].txt`
+A text/markdown file with all found discrepancies in `OUTPUT_LOC`, with
+filename pattern:
+`compare_mets_with_templates-[batch_id]-[date].txt`
 
 
-_Originally created by THA010 for KB BKT2 metadata checks._
+_Originally created by THA010 for KB BKT2 metadata checks. Can be used on BKT2,
+BKT3 and TK4 metadata._

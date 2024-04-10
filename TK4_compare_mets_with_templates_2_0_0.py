@@ -267,15 +267,15 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
 
     with open(os.path.join(OUTPUT_LOC, output_name), 'w+') as output_file:
 
-        output_file.write("# Compare METS with Templates\n")
-        # Write datetime
+        output_file.write(f"# Compare METS with Templates - {batch_id}\n\n")
         output_file.write(f"_log generated {dt.strftime('%Y-%m-%d %H:%M')}_\n\n")
+        output_file.write('\n## Data discrepancies\n')
 
         # NB: errors dict values are list of lists, first val is category.
         if errors:
             for object_id, errs in errors.items():
                 try:
-                    output_file.write(f"\n## {object_id}\n")
+                    output_file.write(f"\n### {object_id}\n")
                     for err in errs:
                         cnt = 0
                         output_file.write('\n')
@@ -283,7 +283,7 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
                             if cnt > 0:
                                 output_file.write(f"- {serr}\n")
                             else:
-                                output_file.write(f"### {serr}\n\n")
+                                output_file.write(f"#### {serr}\n\n")
                             cnt += 1
                     output_file.write('\n')
                 except UnicodeEncodeError:
@@ -293,8 +293,7 @@ def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
             output_file.write('\nNo data discrepancies found.\n')
 
         # Write discrepancies in Object ID's.
-        output_file.write(
-            '--------------------------------------------------------------------------------')
+        output_file.write('---\n\n## ID discrepancies')
         if len(mets_diff_ids) > 0:
             output_file.write(f"\n\nThere are {len(mets_diff_ids)} unique object id's in METS:\n\n")
             mets_diff_ids = sorted(mets_diff_ids)

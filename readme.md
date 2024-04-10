@@ -18,7 +18,7 @@ e.g.
 
 python TK4_compare_mets_with_templates_2_0_0.py
        "M:\BKT-traject\Digitalisering\BKT2_kranten7\Metadatadump\Zending_09\
-       MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
+        MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"

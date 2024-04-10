@@ -21,11 +21,11 @@ python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" 
 e.g.
 
 python TK4_compare_mets_with_templates_2_0_0.py
-       "M:\BKT-traject\Digitalisering\BKT2_kranten7\Metadatadump\Zending_09\
-       MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
-       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
-       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
-       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"
+        "M:\BKT-traject\Digitalisering\BKT2_kranten7\Metadatadump\Zending_09\
+         MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
+        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
+        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
+        "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"
 ```
 
 ## Output
@@ -57,7 +57,7 @@ from xmldiff import main
 from tqdm import tqdm
 
 # Location of output text file.
-#OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
+# OUTPUT_LOC = 'C:/Users/DDD020/OneDrive - KB nationale bibliotheek/Desktop'
 OUTPUT_LOC = '/Users/haighton/Development/KB/TK4_mets_templates_controle/Output'
 
 
@@ -119,7 +119,7 @@ def compare_files(mets, templates):
 
     - `F`: A value between 0 and 1 that determines how similar two XML nodes
            must be to match as the same in both trees.   (Default: 0.5)
-    - `ratio_mode`: ['accurate', 'fast', 'faster']. (Default: fast)
+    - `ratio_mode`: ['accurate', 'fast', 'faster'].      (Default: fast)
 
     Arguments:
         mets (ordered dict):      Object id's with paths to METS files.
@@ -150,6 +150,8 @@ def compare_files(mets, templates):
         # Parse METS and template XML files.
         mets_tree = etree.parse(mets[common_id], parser)
         template_tree = etree.parse(templates[common_id], parser)
+
+        # Compare metadata sections with each other.
 
         dmdsec_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:dmdSec[@ID="DMD1"]', namespaces=ns)[0]),
                                       right=etree.tostring(mets_tree.xpath(
@@ -188,7 +190,6 @@ def compare_files(mets, templates):
         if sourcemd_diff:
             error_data.append(['kbmd:catalogRecord errors:'] + sourcemd_diff)
 
-        # Comapare //mets:amdSec/mets:sourceMD/[@ID="SMD2"]
         sourcemd2_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:sourceMD[@ID="SMD2"]', namespaces=ns)[0]),
                                          right=etree.tostring(mets_tree.xpath(
                                              '//mets:sourceMD[@ID="SMD2"]', namespaces=ns)[0]),
@@ -196,14 +197,13 @@ def compare_files(mets, templates):
         if sourcemd2_diff:
             error_data.append(['mets:sourceMD[2] errors:'] + sourcemd2_diff)
 
-        # Compare //mets:amdSec/mets:digiprovMD
         digiprovmd_diff = main.diff_texts(left=etree.tostring(template_tree.xpath('//mets:digiprovMD', namespaces=ns)[0]),
                                           right=etree.tostring(mets_tree.xpath(
                                               '//mets:digiprovMD', namespaces=ns)[0]),
                                           diff_options=diff_options)
-
         if digiprovmd_diff:
-            # Ignore premis:eventDateTime difference.
+            # Delete premis:eventDateTime difference from errors.
+            # The supplier must change this value.
             rm_entry = 0
             for i in range(len(digiprovmd_diff)):
                 if str(digiprovmd_diff[i]).startswith("UpdateTextIn(node='/mets:digiprovMD/mets:mdWrap/mets:xmlData/premis:event/premis:eventDateTime[1]'"):
@@ -253,6 +253,8 @@ def different_ids(mets, templates):
 
 def print_errors(errors, path_templates, mets_diff_ids, templates_diff_ids):
     """Write errors to a text file.
+
+    Added Markdown tags.
 
     Arguments:
         errors (dict):             ID's with differences found by xmldiff.

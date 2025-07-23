@@ -1,35 +1,69 @@
-# TK4_compare_mets_with_templates script
+# tk4-compare
 
-This script checks if the data we send to the digitisation company - which has
-the form of a partly created METS XML file (METS-template) - has been
-altered where it shouldn't have been e.g. dmdSec[1] and sourceMD should not be
-changed. It will also check if all the object ID's between the supplied METS
-and the templates are equal.
+`tk4-compare` is a command-line tool developed by the KB (National Library of the Netherlands) to validate delivered METS XML files against METS templates previously sent to digitisation partners. It helps ensure that critical metadata sections remain unaltered and that object IDs are consistent between batches and templates.
+
+Originally created for the BKT2 newspaper digitisation project, it is suitable for BKT2, BKT3, and TK4 projects.
+
+---
+
+## What It Does
+
+- Compares key METS sections:
+  - `dmdSec[1]`
+  - `techMD`
+  - `rightsMD`
+  - `sourceMD`
+  - `digiprovMD`
+- Filters known, irrelevant diffs (e.g. self-closing tags in `kbmd:catalogRecord`)
+- Checks for mismatched object IDs between templates and actual METS files
+- Outputs a Markdown report listing discrepancies per batch/object ID
+
+---
+
+## Installation
+
+Clone the repository and install in editable mode:
+
+```bash
+pip install -e .
+```
+
+---
 
 ## Usage
 
-Script expects atleast 2 arguments which should be the location of the
-METS-templates and the location of 1 or more _deel batches_.
-
+```bash
+tk4-compare /path/to/templates /path/to/batch_1 /path/to/batch_2 ... --output-dir /path/to/output
 ```
-python TK4_compare_mets_with_templates_2_0_0.py "/dir/templates" "/dir/batch_1" ... "/dir/batch_N"
 
-e.g.
+### Example:
 
-python TK4_compare_mets_with_templates_2_0_0.py
-       "M:\BKT-traject\Digitalisering\BKT2_kranten7\Metadatadump\Zending_09\
-        MMRHCE02_000000001_v2\METS-templates_MMRHCE02_000000001_v2"
-       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_1_01"
-       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_2_01"
-       "\\gwo-srv-p500\GWO-P500-16\MMRHCE02_000000001_3_01"
+```bash
+tk4-compare \
+  "M:/BKT2/Zending_09/MMRHCE02_000000001_v2/METS-templates_MMRHCE02_000000001_v2" \
+  "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_1_01" \
+  "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_2_01" \
+  --output-dir "./results"
 ```
+
+---
 
 ## Output
 
-A text/markdown file with all found discrepancies in `OUTPUT_LOC`, with
-filename pattern:
-`compare_mets_with_templates-[batch_id]-[date].txt`
+The tool generates a `.txt` file in the specified `--output-dir`, named:
 
+```
+compare_mets_with_templates-[batch_id]-[YYYYMMDD].txt
+```
 
-_Originally created by THA010 for KB BKT2 metadata checks. Can be used on BKT2,
-BKT3 and TK4 metadata._
+The report includes:
+
+- A summary of mismatches per object ID
+- Differences in key METS sections
+- A section listing IDs that are missing in either templates or METS
+
+---
+
+## Author
+
+Created by Thomas Haighton for the Koninklijke Bibliotheek (KB).

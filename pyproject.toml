@@ -1,0 +1,28 @@
+[project]
+name = "tk4-compare"
+version = "3.0.0"
+description = "Tool to compare METS XML files with KB METS templates"
+readme = "README.md"
+authors = [
+  { name = "Thomas Haighton", email = "thomas.haighton@kb.nl" }
+]
+license = "MIT"
+dependencies = [
+  "lxml>=4.9.0",
+  "xmldiff>=2.4",
+  "tqdm>=4.60.0"
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+tk4-compare = "tk4_compare.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,4 +1,28 @@
-.DS_Store
-previous_version/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+env/
 venv/
-Output/
+
+# Output files
+output/
+*.log
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Editor / OS metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Dev dirs
+test_data/
+_old/

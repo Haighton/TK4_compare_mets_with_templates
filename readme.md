@@ -58,7 +58,6 @@ compare_report-[batch_id]-[YYYYMMDD_hhmmss].md
 
 The report includes:
 
-- A summary of mismatches per object ID
 - Differences in key METS sections
 - A section listing IDs that are missing in either templates or METS
 

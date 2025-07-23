@@ -53,7 +53,7 @@ tk4-compare \
 The tool generates a `.md` file in the specified `--output-dir`, named:
 
 ```
-compare_mets_with_templates-[batch_id]-[YYYYMMDD].md
+compare_report-[batch_id]-[YYYYMMDD_hhmmss].md
 ```
 
 The report includes:

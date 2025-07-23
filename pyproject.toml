@@ -6,7 +6,6 @@ readme = "README.md"
 authors = [
   { name = "Thomas Haighton", email = "thomas.haighton@kb.nl" }
 ]
-license = "MIT"
 dependencies = [
   "lxml>=4.9.0",
   "xmldiff>=2.4",

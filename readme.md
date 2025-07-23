@@ -22,10 +22,10 @@ Originally created for the BKT2 newspaper digitisation project, it is suitable f
 
 ## Installation
 
-Clone the repository and install in editable mode:
+Clone the repository and install with pip:
 
 ```bash
-pip install -e .
+pip install .
 ```
 
 ---
@@ -50,10 +50,10 @@ tk4-compare \
 
 ## Output
 
-The tool generates a `.txt` file in the specified `--output-dir`, named:
+The tool generates a `.md` file in the specified `--output-dir`, named:
 
 ```
-compare_mets_with_templates-[batch_id]-[YYYYMMDD].txt
+compare_mets_with_templates-[batch_id]-[YYYYMMDD].md
 ```
 
 The report includes:

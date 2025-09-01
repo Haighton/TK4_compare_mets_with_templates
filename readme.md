@@ -9,11 +9,11 @@ Originally created for the BKT2 newspaper digitisation project, it is suitable f
 ## What It Does
 
 - Compares key METS sections:
-    - `dmdSec[1]`
-    - `techMD`
-    - `rightsMD`
-    - `sourceMD`
-    - `digiprovMD`
+  - `dmdSec[1]`
+  - `techMD`
+  - `rightsMD`
+  - `sourceMD`
+  - `digiprovMD`
 - Filters known, irrelevant diffs (e.g. self-closing tags in `kbmd:catalogRecord`)
 - Checks for mismatched object IDs between templates and actual METS files
 - Outputs a Markdown report listing discrepancies per batch/object ID
@@ -48,21 +48,25 @@ compare_mets --templates /path/to/templates --batches /path/to/batch_1 /path/to/
 ### Example:
 
 ```bash
-compare_mets   "M:/BKT2/Zending_09/MMRHCE02_000000001_v2/METS-templates_MMRHCE02_000000001_v2"   "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_1_01"   "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_2_01"   --output "./results"
+compare_mets   "M:/BKT2/Zending_09/MMRHCE02_000000001_v2/METS-templates_MMRHCE02_000000001_v2"   "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_1_01"   "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_2_01"   --output "./results"   --diff-threshold 0.3   --diff-ratio-mode accurate
 ```
 
 ---
 
 ## CLI Arguments
 
-| Argument             | Type      | Required | Description                                                                 |
-|----------------------|-----------|----------|-----------------------------------------------------------------------------|
-| `templates`          | Path      | Yes\*   | Positional: path to the METS templates directory.                           |
-| `batches`            | Path(s)   | Yes\*   | Positional: one or more batch directories.                                  |
-| `--templates`        | Path      | Yes\*   | Flag alternative to the `templates` positional argument.                    |
-| `--batches`          | Path(s)   | Yes\*   | Flag alternative to the `batches` positional argument.                      |
-| `-o`, `--output`     | Path      | No       | Directory to save output reports. Defaults to current working directory.    |
-| `--version`          | flag      | No       | Print program version and exit.                                             |
+| Argument              | Type      | Required | Description                                                                 |
+|-----------------------|-----------|----------|-----------------------------------------------------------------------------|
+| `templates`           | Path      | Yes\*   | Positional: path to the METS templates directory.                           |
+| `batches`             | Path(s)   | Yes\*   | Positional: one or more batch directories.                                  |
+| `--templates`         | Path      | Yes\*   | Flag alternative to the `templates` positional argument.                    |
+| `--batches`           | Path(s)   | Yes\*   | Flag alternative to the `batches` positional argument.                      |
+| `-o`, `--output`      | Path      | No       | Directory to save output reports. Defaults to current working directory.    |
+| `-v`, `--verbose`     | flag      | No       | Enable verbose logging (DEBUG level).                                       |
+| `--quiet`             | flag      | No       | Suppress info messages, only show errors (ERROR level).                     |
+| `--diff-threshold`    | float     | No       | Similarity threshold for xmldiff (default: 0.5). Lower = more sensitive.    |
+| `--diff-ratio-mode`   | fast/accurate | No   | Ratio mode for xmldiff (default: fast). 'fast' = quick, 'accurate' = precise|
+| `--version`           | flag      | No       | Print program version and exit.                                             |
 
 \* You must provide either the positional arguments (`templates batches...`) **or** the flags (`--templates ... --batches ...`).  
 

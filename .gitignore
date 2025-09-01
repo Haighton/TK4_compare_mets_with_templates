@@ -4,14 +4,8 @@ __pycache__/
 *$py.class
 
 # Virtual environment
-.venv/
-env/
-venv/
-
-# Output files
-output/
-logs/
-*.log
+.venv*/
+venv*/
 
 # Distribution / packaging
 build/
@@ -24,6 +18,9 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Dev dirs
+# Dev
 testdata/
 _old/
+output/
+logs/
+*.log

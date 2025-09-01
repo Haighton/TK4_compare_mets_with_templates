@@ -5,7 +5,7 @@ from typing import Dict, List, Set
 
 
 def print_errors(
-    errors,
+    errors: Dict[str, List[List[str]]],
     path_templates: Path,
     mets_diff_ids: Set[str],
     templates_diff_ids: Set[str],
@@ -18,20 +18,18 @@ def print_errors(
     output_name = f"compare_report-{batch_id}-{dt.strftime('%Y%m%d_%H%M%S')}.md"
     output_path = output / output_name
 
-    # Bereken aantal discrepanties
     total_diffs = sum(len(section) - 1 for diffs in errors.values() for section in diffs)
 
-    # Log voordat we beginnen
     logging.info(
         f"Generating report for batch {batch_id} "
         f"(files with discrepancies: {len(errors)}, total differences: {total_diffs})"
     )
+    logging.debug(f"Writing report to file {output_path}")
 
     with output_path.open("w", encoding="utf-8") as f:
         f.write(f"# Compare METS with Templates - {batch_id}\n\n")
         f.write(f"_log generated {dt.strftime('%Y-%m-%d %H:%M:%S')}_\n\n")
 
-        # Korte samenvatting bovenaan
         f.write("## Summary\n")
         f.write(f"- Files with discrepancies: {len(errors)}\n")
         f.write(f"- Total difference blocks: {total_diffs}\n")
@@ -46,6 +44,7 @@ def print_errors(
                     f.write(f"\n#### {err[0]}\n\n")
                     for detail in err[1:]:
                         f.write(f"- {detail}\n")
+                        logging.debug(f"Report entry: object_id={object_id}, section={err[0]}, detail={detail}")
         else:
             f.write("\nNo data discrepancies found.\n")
 
@@ -54,12 +53,13 @@ def print_errors(
             f.write(f"There are {len(mets_diff_ids)} unique object id's in METS:\n\n")
             for oid in sorted(mets_diff_ids):
                 f.write(f"- {oid}\n")
+                logging.debug(f"Unique METS-only object_id={oid}")
         if templates_diff_ids:
             f.write(f"\nThere are {len(templates_diff_ids)} unique object id's in templates:\n\n")
             for oid in sorted(templates_diff_ids):
                 f.write(f"- {oid}\n")
+                logging.debug(f"Unique template-only object_id={oid}")
         if not mets_diff_ids and not templates_diff_ids:
             f.write("Same object ID's found in METS and templates.\n")
 
-    # Logging na afloop
     logging.info(f"Saved report for batch {batch_id} to {output_path}")

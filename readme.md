@@ -61,7 +61,7 @@ compare_mets   "M:/BKT2/Zending_09/MMRHCE02_000000001_v2/METS-templates_MMRHCE02
 | `batches`             | Path(s)   | Yes\*   | Positional: one or more batch directories.                                  |
 | `--templates`         | Path      | Yes\*   | Flag alternative to the `templates` positional argument.                    |
 | `--batches`           | Path(s)   | Yes\*   | Flag alternative to the `batches` positional argument.                      |
-| `-o`, `--output`      | Path      | No       | Directory to save output reports. Defaults to current working directory.    |
+| `-o`, `--output`      | Path      | No       | Directory to save output reports. Defaults to current working directory `./output`.    |
 | `-v`, `--verbose`     | flag      | No       | Enable verbose logging (DEBUG level).                                       |
 | `--quiet`             | flag      | No       | Suppress info messages, only show errors (ERROR level).                     |
 | `--diff-threshold`    | float     | No       | Similarity threshold for xmldiff (default: 0.5). Lower = more sensitive.    |

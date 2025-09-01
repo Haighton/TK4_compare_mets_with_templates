@@ -10,6 +10,7 @@ venv/
 
 # Output files
 output/
+logs/
 *.log
 
 # Distribution / packaging
@@ -24,5 +25,5 @@ Thumbs.db
 .vscode/
 
 # Dev dirs
-test_data/
+testdata/
 _old/

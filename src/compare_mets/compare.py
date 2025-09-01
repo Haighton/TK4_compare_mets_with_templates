@@ -7,6 +7,7 @@ from xmldiff import main
 from tqdm import tqdm
 from typing import Dict, List, Tuple
 
+
 def compare_files(mets: dict[str, Path], templates: dict[str, Path]) -> Dict[str, List[List[str]]]:
     """Compare key METS sections between each METS and its template."""
     errors = collections.OrderedDict()
@@ -31,24 +32,28 @@ def compare_files(mets: dict[str, Path], templates: dict[str, Path]) -> Dict[str
         try:
             mets_tree = etree.parse(str(mets[common_id]), parser)
         except (etree.XMLSyntaxError, OSError) as e:
-            logging.error("Failed to parse METS file %s: %s", mets[common_id], e)
+            logging.error("Failed to parse METS file %s: %s",
+                          mets[common_id], e)
             continue
 
         try:
             template_tree = etree.parse(str(templates[common_id]), parser)
         except (etree.XMLSyntaxError, OSError) as e:
-            logging.error("Failed to parse template file %s: %s", templates[common_id], e)
+            logging.error("Failed to parse template file %s: %s",
+                          templates[common_id], e)
             continue
 
         def diff_xpath(xpath: str) -> list:
             try:
                 return main.diff_texts(
-                    etree.tostring(template_tree.xpath(xpath, namespaces=ns)[0]),
+                    etree.tostring(template_tree.xpath(
+                        xpath, namespaces=ns)[0]),
                     etree.tostring(mets_tree.xpath(xpath, namespaces=ns)[0]),
                     diff_options=diff_options
                 )
             except IndexError:
-                logging.warning("XPath %s not found in one of the documents for ID %s", xpath, common_id)
+                logging.warning(
+                    "XPath %s not found in one of the documents for ID %s", xpath, common_id)
                 return []
 
         for label, xpath in [
@@ -61,9 +66,11 @@ def compare_files(mets: dict[str, Path], templates: dict[str, Path]) -> Dict[str
         ]:
             diffs = diff_xpath(xpath)
             if label.startswith("kbmd"):
-                diffs = [d for d in diffs if not (str(d).startswith("UpdateTextIn") and str(d).endswith("text=None)"))]
+                diffs = [d for d in diffs if not (str(d).startswith(
+                    "UpdateTextIn") and str(d).endswith("text=None)"))]
             if label.startswith("mets:digiprovMD"):
-                diffs = [d for d in diffs if not str(d).startswith("UpdateTextIn(node='/mets:digiprovMD/mets:mdWrap/mets:xmlData/premis:event/premis:eventDateTime")]
+                diffs = [d for d in diffs if not str(d).startswith(
+                    "UpdateTextIn(node='/mets:digiprovMD/mets:mdWrap/mets:xmlData/premis:event/premis:eventDateTime")]
             if diffs:
                 error_data.append([label] + diffs)
 
@@ -72,7 +79,8 @@ def compare_files(mets: dict[str, Path], templates: dict[str, Path]) -> Dict[str
             err_key = f"{common_id} - {batch_name}"
             errors[err_key] = error_data
 
-    logging.info("Completed comparison for %d common object IDs", len(common_ids))
+    logging.info("Completed comparison for %d common object IDs",
+                 len(common_ids))
     return errors
 
 
@@ -101,4 +109,3 @@ def different_ids(mets: Dict[str, Path], templates: Dict[str, Path]) -> Tuple[Se
             print(f"- {ids}")
 
     return mets_diff_ids, templates_diff_ids
-

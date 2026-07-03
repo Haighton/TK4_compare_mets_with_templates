@@ -13,8 +13,10 @@ Originally created for the BKT2 newspaper digitisation project, it is suitable f
   - `techMD`
   - `rightsMD`
   - `sourceMD`
-  - `digiprovMD`
-- Filters known, irrelevant diffs (e.g. self-closing tags in `kbmd:catalogRecord`)
+  - `digiprovMD` (all sections; matched on their `ID` attribute, so extra or missing sections are reported too)
+- Filters allowed diffs:
+  - `premis:eventDateTime` may be changed by the supplier
+  - empty elements may be delivered as self-closing tags (common in `sourceMD`)
 - Checks for mismatched object IDs between templates and actual METS files
 - Outputs a Markdown report listing discrepancies per batch/object ID
 - Logs activity to both the console and a rotating log file (`logs/compare_mets.log`)

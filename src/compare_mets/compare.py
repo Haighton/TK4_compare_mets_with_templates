@@ -27,15 +27,41 @@ def compare_one(common_id: str, mets_path: Path, template_path: Path, diff_optio
         return None
 
     def diff_xpath(xpath: str) -> list:
-        try:
-            return main.diff_texts(
-                etree.tostring(template_tree.xpath(xpath, namespaces=ns)[0]),
-                etree.tostring(mets_tree.xpath(xpath, namespaces=ns)[0]),
-                diff_options=diff_options,
-            )
-        except IndexError:
+        template_nodes = template_tree.xpath(xpath, namespaces=ns)
+        mets_nodes = mets_tree.xpath(xpath, namespaces=ns)
+        if not template_nodes and not mets_nodes:
             logging.warning(f"XPath {xpath} not found for ID {common_id}")
             return []
+
+        diffs = []
+        template_by_id = collections.OrderedDict((n.get("ID"), n) for n in template_nodes)
+        mets_by_id = collections.OrderedDict((n.get("ID"), n) for n in mets_nodes)
+
+        if (None not in template_by_id and None not in mets_by_id
+                and len(template_by_id) == len(template_nodes)
+                and len(mets_by_id) == len(mets_nodes)):
+            # Alle nodes hebben een uniek ID-attribuut: match secties op ID,
+            # zodat volgordeverschillen geen valse diffs geven.
+            for sec_id in template_by_id:
+                if sec_id not in mets_by_id:
+                    diffs.append(f"Section {sec_id} missing in METS (present in template)")
+            for sec_id in mets_by_id:
+                if sec_id not in template_by_id:
+                    diffs.append(f"Section {sec_id} not in template (present in METS)")
+            pairs = [(template_by_id[i], mets_by_id[i]) for i in template_by_id if i in mets_by_id]
+        else:
+            if len(template_nodes) != len(mets_nodes):
+                diffs.append(
+                    f"Section count mismatch: template={len(template_nodes)}, METS={len(mets_nodes)}")
+            pairs = list(zip(template_nodes, mets_nodes))
+
+        for template_node, mets_node in pairs:
+            diffs.extend(main.diff_texts(
+                etree.tostring(template_node),
+                etree.tostring(mets_node),
+                diff_options=diff_options,
+            ))
+        return diffs
 
     for label, xpath in [
         ("mets:dmdSec errors:", '//mets:dmdSec[@ID="DMD1"]'),
@@ -46,9 +72,12 @@ def compare_one(common_id: str, mets_path: Path, template_path: Path, diff_optio
         ("mets:digiprovMD errors:", "//mets:digiprovMD"),
     ]:
         diffs = diff_xpath(xpath)
-        if label.startswith("kbmd"):
-            diffs = [d for d in diffs if not (str(d).startswith(
-                "UpdateTextIn") and str(d).endswith("text=None)"))]
+        # Toegestane afwijking: lege elementen mogen als self-closing tag
+        # geleverd worden (komt vooral voor in sourceMD/kbmd:catalogRecord).
+        diffs = [d for d in diffs if not (str(d).startswith(
+            "UpdateTextIn") and str(d).endswith("text=None)"))]
+        # Toegestane afwijking: premis:eventDateTime mag door de leverancier
+        # aangepast worden.
         if label.startswith("mets:digiprovMD"):
             diffs = [d for d in diffs if not str(d).startswith(
                 "UpdateTextIn(node='/mets:digiprovMD/mets:mdWrap/mets:xmlData/premis:event/premis:eventDateTime"

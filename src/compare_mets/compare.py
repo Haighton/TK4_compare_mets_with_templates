@@ -99,6 +99,17 @@ def _init_worker(log_queue, level: int) -> None:
     root.setLevel(level)
 
 
+def _auto_workers(n_tasks: int) -> int:
+    """Pick a worker count that leaves room for other processes.
+
+    Uses half the cores, so a second tool with auto workers can run
+    alongside without starving the machine. Capped at 61 (the Windows
+    wait-handle limit for ProcessPoolExecutor) and at the number of tasks.
+    """
+    cores = multiprocessing.cpu_count() or 2
+    return max(1, min(cores // 2, 61, n_tasks))
+
+
 def compare_files(
     mets: Dict[str, Path],
     templates: Dict[str, Path],
@@ -116,10 +127,12 @@ def compare_files(
         initializer = _init_worker
         initargs = (log_queue, logging.getLogger().getEffectiveLevel())
 
-    logging.info(f"Starting parallel comparison with {len(common_ids)} files...")
+    workers = max_workers or _auto_workers(len(common_ids))
+    logging.info(f"Starting parallel comparison with {len(common_ids)} files "
+                 f"using {workers} workers...")
 
     with ProcessPoolExecutor(
-        max_workers=max_workers or (multiprocessing.cpu_count() - 1),
+        max_workers=workers,
         initializer=initializer,
         initargs=initargs,
     ) as executor:

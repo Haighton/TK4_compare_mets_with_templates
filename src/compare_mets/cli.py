@@ -38,8 +38,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("-c", "--config", type=Path, default=None,
                         help="Optional TOML file overriding sections/allowed deviations.")
-    parser.add_argument("--max-workers", type=int, default=None,
-                        help="Number of worker processes (default: CPU count - 1).")
 
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Enable verbose logging (DEBUG level)")
@@ -128,7 +126,6 @@ def main() -> None:
             mets,
             templates_dict,
             config=config,
-            max_workers=args.max_workers,
             log_queue=log_queue,
         )
 

@@ -213,3 +213,13 @@ def test_different_ids_reports_both_directions():
     mets_only, templates_only = different_ids(mets, templates)
     assert mets_only == {"A"}
     assert templates_only == {"C"}
+
+
+def test_auto_workers_leaves_headroom(monkeypatch):
+    from compare_mets import compare as compare_mod
+    monkeypatch.setattr(compare_mod.multiprocessing, "cpu_count", lambda: 8)
+    assert compare_mod._auto_workers(1000) == 4   # helft van de cores
+    assert compare_mod._auto_workers(2) == 2      # nooit meer dan het aantal taken
+    assert compare_mod._auto_workers(0) == 1      # minimaal 1
+    monkeypatch.setattr(compare_mod.multiprocessing, "cpu_count", lambda: 256)
+    assert compare_mod._auto_workers(1000) == 61  # Windows wait-handle limiet

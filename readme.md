@@ -64,7 +64,6 @@ tk4-compare \
 | `batches`             | Path(s)   | Yes      | One or more batch directories with delivered METS files.                    |
 | `-o`, `--output`      | Path      | No       | Directory to save output reports (default: `./output`).                     |
 | `-c`, `--config`      | Path      | No       | TOML file overriding the compared sections / allowed deviations.            |
-| `--max-workers`       | int       | No       | Number of worker processes (default: CPU count - 1).                        |
 | `-v`, `--verbose`     | flag      | No       | Enable verbose logging (DEBUG level).                                       |
 | `--quiet`             | flag      | No       | Suppress info messages, only show errors (ERROR level).                     |
 | `--version`           | flag      | No       | Print program version and exit.                                             |
@@ -78,6 +77,8 @@ tk4-compare \
 | 2    | Usage error (invalid paths, no METS/templates found)           |
 
 This makes the tool usable in batch scripts and pipelines without parsing the report.
+
+The number of worker processes is chosen automatically: half the CPU cores (capped at the Windows process-pool limit and the number of files), so another parallel tool can run alongside without starving the machine.
 
 ---
 

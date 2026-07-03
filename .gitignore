@@ -25,3 +25,6 @@ output/
 logs/
 *.log
 diff_old_new.py
+
+# Project configs (config.example.toml documents the format)
+configs/

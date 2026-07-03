@@ -1,0 +1,49 @@
+# Example project config for compare_mets.
+#
+# Pass it via: tk4-compare templates/ batch/ --config myproject.toml
+#
+# Every key is optional; anything you leave out keeps its built-in
+# default (the KB newspaper set: DMD1, TMD00001, rightsMD, catalogRecord,
+# SMD2 and all digiprovMD sections). Note that `sections` and
+# `ignore_text` REPLACE the default list when present, so list
+# everything you want; `[namespaces]` is merged with the defaults.
+
+# Elements whose text the supplier is allowed to change.
+# Names use the namespace prefixes from the (default or custom) namespace map.
+ignore_text = ["premis:eventDateTime"]
+
+# Sections to compare. `label` is the heading used in the report,
+# `xpath` selects the section in both template and delivered METS.
+# An XPath may match multiple elements (like //mets:digiprovMD); they
+# are then paired on their ID attribute and all compared, and extra or
+# missing sections are reported.
+
+[[sections]]
+label = "mets:dmdSec"
+xpath = '//mets:dmdSec[@ID="DMD1"]'
+
+[[sections]]
+label = "mets:techMD"
+xpath = '//mets:techMD[@ID="TMD00001"]'
+
+[[sections]]
+label = "mets:rightsMD"
+xpath = '//mets:rightsMD[@ADMID="TMD00001"]'
+
+[[sections]]
+label = "kbmd:catalogRecord"
+xpath = "//kbmd:catalogRecord"
+
+[[sections]]
+label = "mets:sourceMD[SMD2]"
+xpath = '//mets:sourceMD[@ID="SMD2"]'
+
+[[sections]]
+label = "mets:digiprovMD"
+xpath = "//mets:digiprovMD"
+
+# Extra namespace prefixes for use in the XPaths above. Merged with the
+# built-in map (mets, mods, premis, kbmd, mix, pica, marc, ...).
+#
+# [namespaces]
+# alto = "http://www.loc.gov/standards/alto/ns-v2#"

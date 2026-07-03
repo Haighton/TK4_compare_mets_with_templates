@@ -97,7 +97,7 @@ label = "mets:digiprovMD"
 xpath = "//mets:digiprovMD"
 ```
 
-Omitted keys keep their default values.
+Omitted keys keep their default values. See `config.example.toml` for a fully annotated example. Project configs can be kept in the (git-ignored) `configs/` directory.
 
 ---
 

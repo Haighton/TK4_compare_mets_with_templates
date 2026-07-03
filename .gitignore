@@ -24,3 +24,4 @@ _old/
 output/
 logs/
 *.log
+diff_old_new.py

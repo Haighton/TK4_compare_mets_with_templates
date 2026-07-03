@@ -1,6 +1,6 @@
 [project]
 name = "compare_mets"
-version = "3.1.0"
+dynamic = ["version"]
 description = "Tool to compare METS XML files with KB METS templates"
 readme = "README.md"
 authors = [
@@ -8,13 +8,18 @@ authors = [
 ]
 dependencies = [
   "lxml>=4.9.0",
-  "xmldiff>=2.4",
   "tqdm>=4.60.0"
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0"
+]
 
 [project.scripts]
 tk4-compare = "compare_mets.cli:main"
+compare-mets = "compare_mets.cli:main"
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -25,3 +30,6 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "compare_mets.__version__"}

@@ -11,6 +11,9 @@ def get_mets(paths: list[Path]) -> Dict[str, Path]:
         logging.info(f"Searching METS files in {path_batch}")
         for path in path_batch.rglob("*_mets.xml"):
             object_id = path.stem.replace("_mets", "")
+            if object_id in mets:
+                logging.warning(
+                    f"Duplicate object ID {object_id}: {path} overwrites {mets[object_id]}")
             mets[object_id] = path
             logging.debug(f"Found METS file for object_id={object_id}: {path}")
     logging.info(f"Found {len(mets)} METS files")

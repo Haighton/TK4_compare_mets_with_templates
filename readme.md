@@ -1,6 +1,6 @@
 # compare_mets
 
-`compare_mets` is a command-line tool developed by the KB (National Library of the Netherlands) to validate delivered METS XML files against METS-templates previously sent to digitisation partners. It helps ensure that critical metadata sections remain unaltered and that object IDs are consistent between batches and templates.
+`compare_mets` is a command-line tool developed by the KB (National Library of the Netherlands) to validate delivered METS XML files against METS-templates previously sent to digitisation partners. It verifies that the source metadata in the templates is returned unchanged in the delivered METS, and that every template sent actually came back in the delivery.
 
 Originally created for the BKT2 newspaper digitisation project, it is suitable for BKT2, BKT3, and TK4 projects.
 
@@ -8,24 +8,27 @@ Originally created for the BKT2 newspaper digitisation project, it is suitable f
 
 ## What It Does
 
-- Compares key METS sections:
-  - `dmdSec[1]`
-  - `techMD`
-  - `rightsMD`
-  - `sourceMD`
-  - `digiprovMD` (all sections; matched on their `ID` attribute, so extra or missing sections are reported too)
-- Filters allowed diffs:
+- Compares key METS sections between template and delivered METS:
+  - `dmdSec[@ID="DMD1"]`
+  - `techMD[@ID="TMD00001"]`
+  - `rightsMD[@ADMID="TMD00001"]`
+  - `kbmd:catalogRecord`
+  - `sourceMD[@ID="SMD2"]`
+  - all `digiprovMD` sections (matched on their `ID` attribute; extra or missing sections are reported)
+- Uses a strict tree comparison: every difference in element structure, attributes, or text is reported with a readable path and both values. Allowed deviations:
   - `premis:eventDateTime` may be changed by the supplier
-  - empty elements may be delivered as self-closing tags (common in `sourceMD`)
-- Checks for mismatched object IDs between templates and actual METS files
-- Outputs a Markdown report listing discrepancies per batch/object ID
-- Logs activity to both the console and a rotating log file (`logs/compare_mets.log`)
+  - empty elements may be delivered as self-closing tags (handled implicitly by comparing parsed trees; a field that had content in the template and comes back empty **is** reported)
+  - attribute order and namespace prefixes are irrelevant
+- Checks delivery completeness: object IDs present in the templates but missing from the delivery (and vice versa)
+- Reports files that could not be parsed as findings (they show up in the report, not only in the log)
+- Outputs a Markdown report and a machine-readable JSON file per run
+- Logs activity to both the console and a rotating log file (`logs/compare_mets.log`), including messages from worker processes
 
 ---
 
 ## Installation
 
-Clone the repository and install with pip:
+Clone the repository and install with pip (requires Python 3.11+):
 
 ```bash
 pip install .
@@ -35,22 +38,20 @@ pip install .
 
 ## Usage
 
-You can provide **positional arguments** (templates path first, then batches) **or flags** (`--templates` and `--batches`). Both styles are supported.
-
 ```bash
-compare_mets /path/to/templates /path/to/batch_1 /path/to/batch_2 ... --output /path/to/output
+tk4-compare /path/to/templates /path/to/batch_1 /path/to/batch_2 --output ./results
 ```
 
-or equivalently:
-
-```bash
-compare_mets --templates /path/to/templates --batches /path/to/batch_1 /path/to/batch_2 --output /path/to/output
-```
+(`compare-mets` is available as an alias for `tk4-compare`.)
 
 ### Example:
 
 ```bash
-compare_mets   "M:/BKT2/Zending_09/MMRHCE02_000000001_v2/METS-templates_MMRHCE02_000000001_v2"   "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_1_01"   "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_2_01"   --output "./results"   --diff-threshold 0.3   --diff-ratio-mode accurate
+tk4-compare \
+  "M:/BKT2/Zending_09/METS-templates_MMRHCE02_000000001_v2" \
+  "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_1_01" \
+  "//gwo-srv-p500/GWO-P500-16/MMRHCE02_000000001_2_01" \
+  --output "./results"
 ```
 
 ---
@@ -59,36 +60,68 @@ compare_mets   "M:/BKT2/Zending_09/MMRHCE02_000000001_v2/METS-templates_MMRHCE02
 
 | Argument              | Type      | Required | Description                                                                 |
 |-----------------------|-----------|----------|-----------------------------------------------------------------------------|
-| `templates`           | Path      | Yes\*   | Positional: path to the METS templates directory.                           |
-| `batches`             | Path(s)   | Yes\*   | Positional: one or more batch directories.                                  |
-| `--templates`         | Path      | Yes\*   | Flag alternative to the `templates` positional argument.                    |
-| `--batches`           | Path(s)   | Yes\*   | Flag alternative to the `batches` positional argument.                      |
-| `-o`, `--output`      | Path      | No       | Directory to save output reports. Defaults to current working directory `./output`.    |
+| `templates`           | Path      | Yes      | Path to the METS templates directory.                                       |
+| `batches`             | Path(s)   | Yes      | One or more batch directories with delivered METS files.                    |
+| `-o`, `--output`      | Path      | No       | Directory to save output reports (default: `./output`).                     |
+| `-c`, `--config`      | Path      | No       | TOML file overriding the compared sections / allowed deviations.            |
+| `--max-workers`       | int       | No       | Number of worker processes (default: CPU count - 1).                        |
 | `-v`, `--verbose`     | flag      | No       | Enable verbose logging (DEBUG level).                                       |
 | `--quiet`             | flag      | No       | Suppress info messages, only show errors (ERROR level).                     |
-| `--diff-threshold`    | float     | No       | Similarity threshold for xmldiff (default: 0.5). Lower = more sensitive.    |
-| `--diff-ratio-mode`   | fast/accurate | No   | Ratio mode for xmldiff (default: fast). 'fast' = quick, 'accurate' = precise|
 | `--version`           | flag      | No       | Print program version and exit.                                             |
 
-\* You must provide either the positional arguments (`templates batches...`) **or** the flags (`--templates ... --batches ...`).  
+### Exit codes
+
+| Code | Meaning                                                        |
+|------|----------------------------------------------------------------|
+| 0    | No discrepancies found                                         |
+| 1    | Findings and/or delivery completeness issues (see the report)  |
+| 2    | Usage error (invalid paths, no METS/templates found)           |
+
+This makes the tool usable in batch scripts and pipelines without parsing the report.
+
+---
+
+## Project configuration
+
+The compared sections and allowed deviations default to the KB newspaper projects. For a project with different sections, pass a TOML file via `--config`:
+
+```toml
+ignore_text = ["premis:eventDateTime"]
+
+[[sections]]
+label = "mets:dmdSec"
+xpath = '//mets:dmdSec[@ID="DMD1"]'
+
+[[sections]]
+label = "mets:digiprovMD"
+xpath = "//mets:digiprovMD"
+```
+
+Omitted keys keep their default values.
 
 ---
 
 ## Output
 
-The tool generates a Markdown report in the specified `--output` directory, named:
+The tool generates two files in the `--output` directory per run:
 
 ```
 compare_report-[batch_id]-[YYYYMMDD_hhmmss].md
+compare_report-[batch_id]-[YYYYMMDD_hhmmss].json
 ```
 
-Each report includes:
+The Markdown report contains a summary, findings per object ID (readable, e.g. ``mets:digiprovMD[DPMD2]/…/premis:agentName — text changed: template 'X' → METS 'Y'``), and a delivery completeness section. The JSON file contains the same data in machine-readable form, for aggregating results across deliveries.
 
-- **Summary section**: number of files with discrepancies, total difference blocks, and ID mismatches.
-- **Detailed discrepancies** per METS file/object ID.
-- **ID discrepancies**: listing object IDs missing in templates or METS.
+---
 
-Logs are written to both the console and to `logs/compare_mets.log` (rotating file, max ~5MB, keeping 5 backups).
+## Development
+
+Run the test suite with:
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
 
 ---
 

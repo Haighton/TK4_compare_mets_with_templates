@@ -1,159 +1,164 @@
 import collections
 import logging
-from pathlib import Path
-from typing import Dict, List, Tuple, Set
-from lxml import etree
-from xmldiff import main
-from tqdm import tqdm
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from logging.handlers import QueueHandler
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
+
+from lxml import etree
+from tqdm import tqdm
+
+from .config import CompareConfig, default_config
+from .findings import Finding
+from .tree_compare import compare_trees, prefix_map, qname
 
 
-def compare_one(common_id: str, mets_path: Path, template_path: Path, diff_options: dict, ns: dict):
-    """Compare a single METS/template pair and return errors."""
-    parser = etree.XMLParser(encoding="utf-8", remove_blank_text=True)
-    error_data = []
+def _parse(path: Path):
+    parser = etree.XMLParser(remove_comments=True, remove_pis=True)
+    return etree.parse(str(path), parser)
 
+
+def _compare_section(label: str, xpath: str, template_tree, mets_tree,
+                     config: CompareConfig, common_id: str) -> List[Finding]:
+    ns = config.namespaces
+    prefixes = prefix_map(config)
+    template_nodes = template_tree.xpath(xpath, namespaces=ns)
+    mets_nodes = mets_tree.xpath(xpath, namespaces=ns)
+    if not template_nodes and not mets_nodes:
+        logging.warning(f"XPath {xpath} not found for ID {common_id}")
+        return []
+
+    findings: List[Finding] = []
+    pairs = []
+    template_by_id = collections.OrderedDict((n.get("ID"), n) for n in template_nodes)
+    mets_by_id = collections.OrderedDict((n.get("ID"), n) for n in mets_nodes)
+
+    if (None not in template_by_id and None not in mets_by_id
+            and len(template_by_id) == len(template_nodes)
+            and len(mets_by_id) == len(mets_nodes)):
+        # All nodes carry a unique ID attribute: match sections on ID, so
+        # extra, missing or reordered sections are handled explicitly.
+        for sec_id, node in template_by_id.items():
+            if sec_id in mets_by_id:
+                pairs.append((node, mets_by_id[sec_id]))
+            else:
+                findings.append(Finding(label, "missing-section",
+                                        f"{qname(node.tag, prefixes)}[{sec_id}]"))
+        for sec_id, node in mets_by_id.items():
+            if sec_id not in template_by_id:
+                findings.append(Finding(label, "extra-section",
+                                        f"{qname(node.tag, prefixes)}[{sec_id}]"))
+    else:
+        if len(template_nodes) != len(mets_nodes):
+            findings.append(Finding(label, "section-count", label,
+                                    str(len(template_nodes)), str(len(mets_nodes))))
+        pairs = list(zip(template_nodes, mets_nodes))
+
+    for template_node, mets_node in pairs:
+        root_path = qname(template_node.tag, prefixes)
+        if template_node.get("ID"):
+            root_path += f"[{template_node.get('ID')}]"
+        findings.extend(compare_trees(template_node, mets_node, label, config, root_path))
+    return findings
+
+
+def compare_one(common_id: str, mets_path: Path, template_path: Path,
+                config: CompareConfig) -> Optional[Tuple[str, List[Finding]]]:
+    """Compare a single METS/template pair and return (report key, findings)."""
+    findings: List[Finding] = []
+
+    mets_tree = template_tree = None
     try:
-        mets_tree = etree.parse(str(mets_path), parser)
+        mets_tree = _parse(mets_path)
     except (etree.XMLSyntaxError, OSError) as e:
         logging.error(f"Failed to parse METS file {mets_path}: {e}")
-        return None
-
+        findings.append(Finding("(file)", "parse-error", mets_path.name, None, str(e)))
     try:
-        template_tree = etree.parse(str(template_path), parser)
+        template_tree = _parse(template_path)
     except (etree.XMLSyntaxError, OSError) as e:
         logging.error(f"Failed to parse template file {template_path}: {e}")
-        return None
+        findings.append(Finding("(file)", "parse-error", template_path.name, None, str(e)))
 
-    def diff_xpath(xpath: str) -> list:
-        template_nodes = template_tree.xpath(xpath, namespaces=ns)
-        mets_nodes = mets_tree.xpath(xpath, namespaces=ns)
-        if not template_nodes and not mets_nodes:
-            logging.warning(f"XPath {xpath} not found for ID {common_id}")
-            return []
+    if mets_tree is not None and template_tree is not None:
+        for label, xpath in config.sections:
+            findings.extend(_compare_section(
+                label, xpath, template_tree, mets_tree, config, common_id))
 
-        diffs = []
-        template_by_id = collections.OrderedDict((n.get("ID"), n) for n in template_nodes)
-        mets_by_id = collections.OrderedDict((n.get("ID"), n) for n in mets_nodes)
-
-        if (None not in template_by_id and None not in mets_by_id
-                and len(template_by_id) == len(template_nodes)
-                and len(mets_by_id) == len(mets_nodes)):
-            # Alle nodes hebben een uniek ID-attribuut: match secties op ID,
-            # zodat volgordeverschillen geen valse diffs geven.
-            for sec_id in template_by_id:
-                if sec_id not in mets_by_id:
-                    diffs.append(f"Section {sec_id} missing in METS (present in template)")
-            for sec_id in mets_by_id:
-                if sec_id not in template_by_id:
-                    diffs.append(f"Section {sec_id} not in template (present in METS)")
-            pairs = [(template_by_id[i], mets_by_id[i]) for i in template_by_id if i in mets_by_id]
-        else:
-            if len(template_nodes) != len(mets_nodes):
-                diffs.append(
-                    f"Section count mismatch: template={len(template_nodes)}, METS={len(mets_nodes)}")
-            pairs = list(zip(template_nodes, mets_nodes))
-
-        for template_node, mets_node in pairs:
-            diffs.extend(main.diff_texts(
-                etree.tostring(template_node),
-                etree.tostring(mets_node),
-                diff_options=diff_options,
-            ))
-        return diffs
-
-    for label, xpath in [
-        ("mets:dmdSec errors:", '//mets:dmdSec[@ID="DMD1"]'),
-        ("mets:techMD errors:", '//mets:techMD[@ID="TMD00001"]'),
-        ("mets:rightsMD errors:", '//mets:rightsMD[@ADMID="TMD00001"]'),
-        ("kbmd:catalogRecord errors:", "//kbmd:catalogRecord"),
-        ("mets:sourceMD[2] errors:", '//mets:sourceMD[@ID="SMD2"]'),
-        ("mets:digiprovMD errors:", "//mets:digiprovMD"),
-    ]:
-        diffs = diff_xpath(xpath)
-        # Toegestane afwijking: lege elementen mogen als self-closing tag
-        # geleverd worden (komt vooral voor in sourceMD/kbmd:catalogRecord).
-        diffs = [d for d in diffs if not (str(d).startswith(
-            "UpdateTextIn") and str(d).endswith("text=None)"))]
-        # Toegestane afwijking: premis:eventDateTime mag door de leverancier
-        # aangepast worden.
-        if label.startswith("mets:digiprovMD"):
-            diffs = [d for d in diffs if not str(d).startswith(
-                "UpdateTextIn(node='/mets:digiprovMD/mets:mdWrap/mets:xmlData/premis:event/premis:eventDateTime"
-            )]
-        if diffs:
-            error_data.append([label] + diffs)
-
-    if error_data:
-        batch_name = mets_path.parents[2].name
-        err_key = f"{common_id} - {batch_name}"
-        return err_key, error_data
+    if findings:
+        parents = mets_path.parents
+        batch_name = parents[2].name if len(parents) > 2 else parents[0].name
+        return f"{common_id} - {batch_name}", findings
     return None
+
+
+def _init_worker(log_queue, level: int) -> None:
+    """Route worker-process logging into the main process via the queue."""
+    root = logging.getLogger()
+    root.handlers = [QueueHandler(log_queue)]
+    root.setLevel(level)
 
 
 def compare_files(
     mets: Dict[str, Path],
     templates: Dict[str, Path],
-    diff_threshold: float = 0.5,
-    diff_ratio_mode: str = "fast",
-    max_workers: int = None,
-) -> Dict[str, List[List[str]]]:
+    config: Optional[CompareConfig] = None,
+    max_workers: Optional[int] = None,
+    log_queue=None,
+) -> Dict[str, List[Finding]]:
     """Compare METS files with templates in parallel using a process pool."""
-    errors = collections.OrderedDict()
+    config = config or default_config()
+    errors: Dict[str, List[Finding]] = collections.OrderedDict()
     common_ids = sorted(set(mets.keys()).intersection(templates.keys()))
-    diff_options = {"F": diff_threshold, "ratio_mode": diff_ratio_mode}
 
-    ns = {
-        "mets": "http://www.loc.gov/METS/",
-        "mods": "http://www.loc.gov/mods/v3",
-        "premis": "info:lc/xmlns/premis-v2",
-        "kbmd": "http://schemas.kb.nl/kbmd/v1",
-        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "mix": "http://www.loc.gov/mix/v20",
-        "pica": "info:srw/schema/5/picaXML-v1.0",
-        "marc": "http://www.loc.gov/MARC21/slim",
-    }
+    initializer, initargs = None, ()
+    if log_queue is not None:
+        initializer = _init_worker
+        initargs = (log_queue, logging.getLogger().getEffectiveLevel())
 
     logging.info(f"Starting parallel comparison with {len(common_ids)} files...")
 
-    with ProcessPoolExecutor(max_workers=max_workers or (multiprocessing.cpu_count() - 1)) as executor:
+    with ProcessPoolExecutor(
+        max_workers=max_workers or (multiprocessing.cpu_count() - 1),
+        initializer=initializer,
+        initargs=initargs,
+    ) as executor:
         futures = {
-            executor.submit(compare_one, cid, mets[cid], templates[cid], diff_options, ns): cid
+            executor.submit(compare_one, cid, mets[cid], templates[cid], config): cid
             for cid in common_ids
         }
-        for future in tqdm(as_completed(futures), total=len(futures), desc="Comparing METS files", unit="file"):
+        for future in tqdm(as_completed(futures), total=len(futures),
+                           desc="Comparing METS files", unit="file"):
             result = future.result()
             if result:
-                err_key, error_data = result
-                errors[err_key] = error_data
+                err_key, findings = result
+                errors[err_key] = findings
 
     logging.info(f"Completed comparison for {len(common_ids)} common object IDs")
     return errors
 
 
 def different_ids(mets: Dict[str, Path], templates: Dict[str, Path]) -> Tuple[Set[str], Set[str]]:
-    """Find differences in object IDs between METS and templates.
+    """Check delivery completeness on object IDs.
 
     Args:
-        mets: Object IDs mapped to METS file paths.
+        mets: Object IDs mapped to delivered METS file paths.
         templates: Object IDs mapped to METS template file paths.
 
     Returns:
         Tuple of:
-            - IDs found in METS but not in templates.
-            - IDs found in templates but not in METS.
+            - IDs delivered in METS without a matching template.
+            - IDs sent as template but not returned in the delivered METS.
     """
     mets_diff_ids = set(mets.keys()) - set(templates.keys())
     if mets_diff_ids:
-        logging.info(f"There are {len(mets_diff_ids)} unique object IDs in METS:")
+        logging.info(f"There are {len(mets_diff_ids)} delivered METS without a template:")
         for oid in sorted(mets_diff_ids):
             logging.debug(f"  METS-only: {oid}")
 
     templates_diff_ids = set(templates.keys()) - set(mets.keys())
     if templates_diff_ids:
-        logging.info(f"There are {len(templates_diff_ids)} unique object IDs in templates:")
+        logging.info(f"There are {len(templates_diff_ids)} templates not returned in the delivery:")
         for oid in sorted(templates_diff_ids):
             logging.debug(f"  Template-only: {oid}")
 

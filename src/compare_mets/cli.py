@@ -137,7 +137,7 @@ def main() -> None:
 
         logging.info(f"Writing output to {args.output}")
         write_reports(errors, mets_diff_ids, templates_diff_ids,
-                      args.output, args.batches)
+                      args.output, args.batches, n_compared=len(common_ids))
 
         total_findings = sum(len(findings) for findings in errors.values())
         logging.info(

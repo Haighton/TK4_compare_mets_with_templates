@@ -103,14 +103,17 @@ Omitted keys keep their default values. See `config.example.toml` for a fully an
 
 ## Output
 
-The tool generates two files in the `--output` directory per run:
+The tool generates three files in the `--output` directory per run:
 
 ```
+compare_report-[batch_id]-[YYYYMMDD_hhmmss].html
 compare_report-[batch_id]-[YYYYMMDD_hhmmss].md
 compare_report-[batch_id]-[YYYYMMDD_hhmmss].json
 ```
 
-The Markdown report contains a summary, findings per object ID (readable, e.g. ``mets:digiprovMD[DPMD2]/…/premis:agentName — text changed: template 'X' → METS 'Y'``), and a delivery completeness section. The JSON file contains the same data in machine-readable form, for aggregating results across deliveries.
+The **HTML report** is the most convenient to review: identical changes are bundled into one collapsible row with a count of affected objects (`3412 / 3412 objects` is highlighted, so a systematic supplier-wide change is visible at a glance), each row expands to the template/METS values and the affected object IDs, and a per-object view is included. It is fully self-contained (no JavaScript, no external resources), so it can be opened straight from a network share or attached to an e-mail.
+
+The **Markdown report** contains a summary and findings per object ID (readable, e.g. ``mets:digiprovMD[DPMD2]/…/premis:agentName — text changed: template 'X' → METS 'Y'``). The **JSON file** contains the same data plus the bundled view in machine-readable form, for aggregating results across deliveries.
 
 ---
 

@@ -1,6 +1,6 @@
 [project]
 name = "compare_mets"
-version = "3.0.0"
+version = "3.1.0"
 description = "Tool to compare METS XML files with KB METS templates"
 readme = "README.md"
 authors = [
